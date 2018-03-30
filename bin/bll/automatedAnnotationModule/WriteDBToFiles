@@ -1,0 +1,177 @@
+
+	public static void WriteFileHadithBooks() {
+		
+		Connection conn = getConnection();
+				java.sql.ResultSet resultSet =  null;
+				try 
+				{
+					//SELECT * FROM fyp.books where collectionName='Sahih al-Bukhari' LIMIT 10;
+					Statement statement = conn.createStatement();
+					String _query = "SELECT * " + "FROM  books";
+					
+					resultSet = statement.executeQuery(_query);
+			             
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+				PrintWriter writer;
+				try {
+					writer = new PrintWriter("HadithBooks.txt", "UTF-8");
+				
+				//List<HadithBook> hadithBooks = new ArrayList<HadithBook>();
+				try {
+		   		 	if (resultSet!= null)
+		   		 		while (resultSet.next()) 
+		   		 		{
+						 	 String collection = resultSet.getString("collectionName");
+				    		 String bookID = resultSet.getString("bookID");
+				    		 String bookNameEng = resultSet.getString("bookNameE");
+				    		 String bookNameAr = resultSet.getString("bookNameA");
+				    		 
+				    		 writer.println(collection+"~"+bookID+"~"+bookNameEng+"~"+bookNameAr);
+				    		 //hadithBooks.add(new HadithBook(bookID, bookNameEng, bookNameAr, collection));
+		   		 		}
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+				finally
+				{
+					if(writer!=null)
+						writer.close();
+				}
+				} catch (Exception e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				} 
+				
+
+	}
+	
+
+	
+
+public static void FileHadithChapters() {
+		
+	
+	
+		Connection conn = getConnection();
+		
+
+		/*================================================================================
+		 * 
+		 * Automated Chapter Indviduals Population Start
+		 * 
+		 *=================================================================================*/
+		
+		
+		
+		java.sql.ResultSet resultSet =  null;
+			try 
+			{
+				Statement statement = conn.createStatement();
+				String _query = "SELECT * " + "FROM  chapter";//  where BookID='"+String.valueOf(inbookID)+"' and collectionName = '"+collectionName+"'";
+
+				resultSet = statement.executeQuery(_query);
+		             
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+			PrintWriter writer;
+			try {
+				writer = new PrintWriter("HadithChapters.txt", "UTF-8");
+			
+				try {
+	   		 	if (resultSet!= null)
+	   		 		while (resultSet.next() /*&& check<1000*/) 
+	   		 		{
+	   		 			//check+=1;
+					 	 String collection = resultSet.getString("collectionName");
+					 	 String chapterID = resultSet.getString("chapterID");
+			    		 String bookID = resultSet.getString("bookId");
+			    		 String chapterNameEng = resultSet.getString("chapterEng");
+			    		 String chapterNameAr = resultSet.getString("chapterArab");
+			    		 String chapterIntro = resultSet.getString("chapterIntro");
+			    		 
+			    		 writer.println(collection+"~"+chapterID+"~"+bookID+"~"+chapterNameEng+"~"+chapterNameAr+"~"+chapterIntro);
+			    		 //hadithChapters.add(new HadithChapter(chapterID, bookID, chapterNameEng, chapterNameAr, chapterIntro));
+	   		 		}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+				finally
+				{
+					if(writer!=null)
+						writer.close();
+				}
+				} catch (Exception e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				} 
+				
+
+
+	}
+
+
+
+public static void FileHadithIndividuals() {
+	
+	Connection conn = getConnection();
+	
+	java.sql.ResultSet resultSet =  null;
+		try 
+		{
+			Statement statement = conn.createStatement();
+			String _query = "SELECT * " + "FROM  hadith2";
+			//String _query = "SELECT * " + "FROM  hadith2 where inBookID='64'";
+			resultSet = statement.executeQuery(_query);
+	             
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		int i = 0;
+		PrintWriter writer;
+		try {
+			writer = new PrintWriter("Hadiths.txt", "UTF-8");
+		
+		try {
+   		 	if (resultSet!= null)
+   		 		while (resultSet.next() /*&& i<600*/) 
+   		 		{
+   		 			i+=1;
+   		 			String rawEngNarrator = resultSet.getString("narratorEng");
+				 	 String collection = resultSet.getString("collectionName");
+		    		 String hadithNumber = resultSet.getString("reference");
+				 	 String chapterID = resultSet.getString("eChapId");
+		    		 String bookID = resultSet.getString("inBookID");
+		    		 String hadithEng = rawEngNarrator+": "+ resultSet.getString("textEng");
+		    		 
+		    		 String hadithAr = resultSet.getString("fullHadith");
+		    		 String narratorChain = resultSet.getString("narratorArab");
+		    		 String narratorEng = null;
+		    		 //ystem.out.println(rawEngNarrator);
+		    		 if (rawEngNarrator.equals("null")==false &&  rawEngNarrator.equals("")==false && rawEngNarrator!=null )
+		    		 {	 narratorEng = rawEngNarrator.split(":")[0].split("said")[0].split("that")[0];
+		    		 	if (narratorEng.length()>9) {
+		    		 	//System.out.println(narratorEng.substring(0, 8)+"\t"+narratorEng.substring(9));
+		    		 	if(narratorEng.substring(0, 8).equals("Narrated "))
+		    		 		narratorEng = narratorEng.substring(9);}
+		    		 }
+		    				 
+		    		 //System.out.println(collection+"\t"+hadithNumber+"\t"+narratorEng+"\t"+hadithEng+"\t"+hadithAr);
+		    		 writer.println(hadithNumber+"~"+chapterID+"~"+ bookID+"~"+ hadithEng+"~"+hadithAr+"~"+narratorEng+"~"+narratorChain);
+   		 		}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		finally
+		{
+			if(writer!=null)
+				writer.close();
+		}
+		} catch (Exception e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		} 
+
+}

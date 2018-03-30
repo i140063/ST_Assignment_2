@@ -1,0 +1,480 @@
+Connection conn = getConnection();
+		
+		
+		
+		OntDocumentManager mgr = new OntDocumentManager();
+		OntModelSpec s = new OntModelSpec( OntModelSpec.OWL_MEM);
+		s.setDocumentManager( mgr );
+		OntModel model = ModelFactory.createOntologyModel( s, null );
+		//model.setStrictMode(false);
+		model.read(inputfilename,"RDF/XML-ABBREV" );
+
+		
+		/*================================================================================
+		 * 
+		 * Automated Book Indviduals Population Start
+		 * 
+		 *=================================================================================*/
+		
+		//get books data
+				java.sql.ResultSet resultSet =  null;
+				try 
+				{
+					Statement statement = conn.createStatement();
+					String _query = "SELECT * " + "FROM  books";
+					resultSet = statement.executeQuery(_query);
+			             
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+				
+				List<HadithBook> hadithBooks = new ArrayList<HadithBook>();
+				try {
+		   		 	if (resultSet!= null)
+		   		 		while (resultSet.next()) 
+		   		 		{
+						 	 String collection = resultSet.getString("collectionName");
+				    		 String bookID = resultSet.getString("bookID");
+				    		 String bookNameEng = resultSet.getString("bookNameE");
+				    		 String bookNameAr = resultSet.getString("bookNameA");
+				    		 
+				    		 //System.out.println(collection+"\t"+bookID+"\t"+bookNameEng+"\t"+bookNameAr);
+				    		 hadithBooks.add(new HadithBook(bookID, bookNameEng, bookNameAr, collection));
+		   		 		}
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+				
+			//putting data in model
+		
+		String hadithBookClassUri =  HadithOnt+ "HadithBook";
+		//System.out.println("hadithBookClassUri: "+hadithBookClassUri);
+		OntClass c = model.getOntClass(hadithBookClassUri);
+		//System.out.println("hadithBookClass"+c.getLocalName());
+		String collectionUri =  HadithOnt + "Sahih-Al-Bukhari";
+		Individual bukhari = model.getIndividual(collectionUri);
+		//System.out.println("hadithCollectionIndividualUri: "+collectionUri);
+		//System.out.println("hadithCollectionIndividual: "+bukhari.getLocalName());
+		
+		String objPropertyUri =  HadithOnt + "BookBelongsToCollection";
+		OntProperty  bookBelongsToCollectionProperty = model.getOntProperty(objPropertyUri);		
+		//System.out.println("hadithCollectionIndividualUri: "+objPropertyUri);
+		//System.out.println("hadithCollectionIndividual: "+bookBelongsToCollectionProperty.getLocalName());
+		
+		String CollectionHasBookUri =  HadithOnt + "CollectionHasBook";
+		OntProperty  CollectionHasBookProperty = model.getOntProperty(CollectionHasBookUri);		
+		//System.out.println("CollectionHasBookUri: "+CollectionHasBookUri);
+		//System.out.println("CollectionHasBookProperty: "+CollectionHasBookProperty.getLocalName());
+		
+		String dataPropertyUri =  HadithOnt + "HadithBookNumber";
+		OntProperty  HadithBookNumberProperty = model.getOntProperty(dataPropertyUri);		
+		//System.out.println("HadithBookNumberPropertyUri: "+dataPropertyUri);
+		//System.out.println("HadithBookNumberProperty: "+HadithBookNumberProperty.getLocalName());
+		
+		for (HadithBook hadithBook: hadithBooks) {
+		
+			String bookUri =  HadithOnt+ "bukhari"+"-"+hadithBook.getBookID();
+			//System.out.println(bookUri);
+			
+			Individual individual = model.createIndividual(bookUri, c);
+			individual.addLabel( hadithBook.getBookNameEnglish(), "en" );
+			individual.addLabel( hadithBook.getBookNameArabic() ,"ar" );
+			individual.addProperty(bookBelongsToCollectionProperty, bukhari);
+			individual.addProperty(HadithBookNumberProperty,hadithBook.getBookID());
+			bukhari.addProperty(CollectionHasBookProperty, individual);
+					
+		}
+		
+		/*================================================================================
+		 * 
+		 * Automated Book Indviduals Population end
+		 * 
+		 *=================================================================================*/
+		
+		/*================================================================================
+		 * 
+		 * Automated Chapter Indviduals Population Start
+		 * 
+		 *=================================================================================*/
+		
+		//getting data from db
+		
+		//get books data
+			try 
+			{
+				Statement statement = conn.createStatement();
+				String _query = "SELECT * " + "FROM  chapter  where BookID='64'";
+				resultSet = statement.executeQuery(_query);
+		             
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+			//int check = 0;
+			List<HadithChapter> hadithChapters = new ArrayList<HadithChapter>();
+			try {
+	   		 	if (resultSet!= null)
+	   		 		while (resultSet.next() /*&& check<1000*/) 
+	   		 		{
+	   		 			//check+=1;
+					 	 String collection = resultSet.getString("collectionName");
+					 	 String chapterID = resultSet.getString("chapterID");
+			    		 String bookID = resultSet.getString("bookId");
+			    		 String chapterNameEng = resultSet.getString("chapterEng");
+			    		 String chapterNameAr = resultSet.getString("chapterArab");
+			    		 String chapterIntro = resultSet.getString("chapterIntro");
+			    		 
+			    		 //System.out.println(collection+"\t"+chapterID+"\t"+chapterNameEng+"\t"+chapterNameAr);
+			    		 hadithChapters.add(new HadithChapter(chapterID, bookID, chapterNameEng, chapterNameAr, chapterIntro));
+	   		 		}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+	
+	
+	
+		
+		//putting data in model
+		
+		
+
+		String hadithChapterClassUri =  HadithOnt+ "HadithChapter";
+		//System.out.println("hadithChapterClassUri: "+hadithChapterClassUri);
+		OntClass hadithChapterClass = model.getOntClass(hadithChapterClassUri);
+		//System.out.println("hadithChapterClass"+hadithChapterClass.getLocalName());
+		
+		//System.out.println("hadithCollectionIndividualUri: "+collectionUri);
+		//System.out.println("hadithCollectionIndividual: "+bukhari.getLocalName());
+		
+		//from collection and book
+		String CollectionHasChapterUri =  HadithOnt + "CollectionHasChapter";
+		OntProperty  CollectionHasChapterProperty = model.getOntProperty(CollectionHasChapterUri);		
+		//System.out.println("ChapterBelongsToCollectionUri: "+CollectionHasChapterUri);
+		//System.out.println("ChapterBelongsToCollectionProperty: "+CollectionHasChapterProperty.getLocalName());
+		
+		String BookHasChapterPropertyUri =  HadithOnt + "BookHasChapter";
+		OntProperty  BookHasChapterProperty = model.getOntProperty(BookHasChapterPropertyUri);		
+		//System.out.println("ChapterBelongsToBookPropertyUri: "+BookHasChapterPropertyUri);
+		//System.out.println("ChapterBelongsToBookProperty: "+BookHasChapterProperty.getLocalName());
+		
+		//from chapter
+		String ChapterBelongsToCollectionUri =  HadithOnt + "ChapterBelongsToCollection";
+		OntProperty  ChapterBelongsToCollectionProperty = model.getOntProperty(ChapterBelongsToCollectionUri);		
+		//System.out.println("ChapterBelongsToCollectionUri: "+ChapterBelongsToCollectionUri);
+		//System.out.println("ChapterBelongsToCollectionProperty: "+ChapterBelongsToCollectionProperty.getLocalName());
+		
+		String ChapterBelongsToBookPropertyUri =  HadithOnt + "ChapterBelongsToBook";
+		OntProperty  ChapterBelongsToBookProperty = model.getOntProperty(ChapterBelongsToBookPropertyUri);		
+		//System.out.println("ChapterBelongsToBookPropertyUri: "+ChapterBelongsToBookPropertyUri);
+		//System.out.println("ChapterBelongsToBookProperty: "+ChapterBelongsToBookProperty.getLocalName());
+		
+		String HadithChapterNumberPropertyUri =  HadithOnt + "HadithChapterNumber";
+		OntProperty  HadithChapterNumberProperty = model.getOntProperty(HadithChapterNumberPropertyUri);		
+		//System.out.println("HadithChapterNumberPropertyUri: "+HadithChapterNumberPropertyUri);
+		//System.out.println("HadithChapterNumberProperty: "+HadithChapterNumberProperty.getLocalName());
+		
+		for (HadithChapter hadithChapter: hadithChapters) {
+		
+			
+			String bookUri =  HadithOnt + "bukhari-"+hadithChapter.getBookID();
+			Individual bookIndividual = model.getIndividual(bookUri);
+			String chapterUri =  HadithOnt+ "bukhari"+"-"+hadithChapter.getBookID()+"-"+hadithChapter.getChapterID();
+			//System.out.println(chapterUri);
+			
+			Individual individual = model.createIndividual(chapterUri, hadithChapterClass);
+			individual.addLabel( hadithChapter.getChapterEnglish(), "en" );
+			individual.addLabel( hadithChapter.getChapterArabic() ,"ar" );
+			individual.addComment( hadithChapter.getChapterIntro() ,"ar" );
+			individual.addProperty(ChapterBelongsToCollectionProperty, bukhari);
+			individual.addProperty(ChapterBelongsToBookProperty, bookIndividual);
+			bukhari.addProperty(CollectionHasChapterProperty, individual);
+			bookIndividual.addProperty(BookHasChapterProperty, individual);
+			individual.addProperty(HadithChapterNumberProperty,hadithChapter.getChapterID());
+					
+		}
+		
+		/*================================================================================
+		 * 
+		 * Automated Chapter Indviduals Population end
+		 * 
+		 *=================================================================================*/
+		
+		
+		/*================================================================================
+		 * 
+		 * Automated Hadith Indviduals Population Start
+		 * 
+		 *=================================================================================*/
+		
+		//getting data from db
+		
+		//get hadith data
+			try 
+			{
+				Statement statement = conn.createStatement();
+				String _query = "SELECT * " + "FROM  hadith2 where inBookID='64'";
+				resultSet = statement.executeQuery(_query);
+		             
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+			int i = 0;
+			List<Hadith> hadiths = new ArrayList<Hadith>();
+			try {
+	   		 	if (resultSet!= null)
+	   		 		while (resultSet.next() && i<600) 
+	   		 		{
+	   		 			i+=1;
+	   		 			String rawEngNarrator = resultSet.getString("narratorEng");
+					 	 String collection = resultSet.getString("collectionName");
+			    		 String hadithNumber = resultSet.getString("reference");
+					 	 String chapterID = resultSet.getString("eChapId");
+			    		 String bookID = resultSet.getString("inBookID");
+			    		 String hadithEng = rawEngNarrator+": "+ resultSet.getString("textEng");
+			    		 
+			    		 String hadithAr = resultSet.getString("fullHadith");
+			    		 String narratorChain = resultSet.getString("narratorArab");
+			    		 String narratorEng = null;
+			    		 //ystem.out.println(rawEngNarrator);
+			    		 if (rawEngNarrator.equals("null")==false &&  rawEngNarrator.equals("")==false && rawEngNarrator!=null )
+			    		 {	 narratorEng = rawEngNarrator.split(":")[0].split("said")[0].split("that")[0];
+			    		 	if (narratorEng.length()>9) {
+			    		 	//System.out.println(narratorEng.substring(0, 8)+"\t"+narratorEng.substring(9));
+			    		 	if(narratorEng.substring(0, 8).equals("Narrated "))
+			    		 		narratorEng = narratorEng.substring(9);}
+			    		 }
+			    				 
+			    		 //System.out.println(collection+"\t"+hadithNumber+"\t"+narratorEng+"\t"+hadithEng+"\t"+hadithAr);
+			    		 hadiths.add(new Hadith(hadithNumber,chapterID, bookID, hadithEng, hadithAr, narratorEng,narratorChain));
+	   		 		}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+	
+	
+	
+		
+		//putting data in model
+		
+		
+
+		String hadithClassUri =  HadithOnt+ "Hadith";
+		//System.out.println("hadithClassUri: "+hadithClassUri);
+		OntClass hadithClass = model.getOntClass(hadithClassUri);
+		//System.out.println("hadithClass"+hadithClass.getLocalName());
+		
+		String hadithNarratorClassUri =  HadithOnt+ "HadithNarrator";
+		//System.out.println("hadithNarratorClassUri: "+hadithNarratorClassUri);
+		OntClass hadithNarratorClass = model.getOntClass(hadithNarratorClassUri);
+		//System.out.println("hadithNarratorClass"+hadithNarratorClass.getLocalName());
+		
+		
+		
+		//System.out.println("hadithCollectionIndividualUri: "+collectionUri);
+		//System.out.println("hadithCollectionIndividual: "+bukhari.getLocalName());
+		
+		//from collection and book and chapter
+		String CollectionHasHadithUri =  HadithOnt + "CollectionHasHadith";
+		OntProperty  CollectionHasHadithProperty = model.getOntProperty(CollectionHasHadithUri);		
+		//System.out.println("CollectionHasHadithUri: "+CollectionHasHadithUri);
+		//System.out.println("CollectionHasHadithProperty: "+CollectionHasHadithProperty.getLocalName());
+		
+		String BookHasHadithPropertyUri =  HadithOnt + "BookHasHadith";
+		OntProperty  BookHasHadithProperty = model.getOntProperty(BookHasHadithPropertyUri);		
+		//System.out.println("BookHasHadithPropertyUri: "+BookHasHadithPropertyUri);
+		//System.out.println("BookHasHadithProperty: "+BookHasHadithProperty.getLocalName());
+		
+		String ChapterHasHadithPropertyUri =  HadithOnt + "ChapterHasHadith";
+		OntProperty  ChapterHasHadithProperty = model.getOntProperty(ChapterHasHadithPropertyUri);		
+		//System.out.println("BookHasHadithPropertyUri: "+ChapterHasHadithPropertyUri);
+		//System.out.println("ChapterHasHadithProperty: "+ChapterHasHadithProperty.getLocalName());
+		
+		
+		/*String NarratedPropertyUri =  HadithOnt + "Narrated";
+		OntProperty  NarratedProperty = model.getOntProperty(NarratedPropertyUri);		
+		//System.out.println("NarratedPropertyUri: "+NarratedPropertyUri);
+		//System.out.println("NarratedProperty: "+NarratedProperty.getLocalName());*/
+		
+		//from Hadith
+		String HadithBelongsToCollectionUri =  HadithOnt + "HadithBelongsToCollection";
+		OntProperty  HadithBelongsToCollectionProperty = model.getOntProperty(HadithBelongsToCollectionUri);		
+		//System.out.println("HadithBelongsToCollectionUri: "+HadithBelongsToCollectionUri);
+		//System.out.println("HadithBelongsToCollectionProperty: "+HadithBelongsToCollectionProperty.getLocalName());
+		
+		String HadithBelongsToBookPropertyUri =  HadithOnt + "HadithBelongsToBook";
+		OntProperty  HadithBelongsToBookProperty = model.getOntProperty(HadithBelongsToBookPropertyUri);		
+		//System.out.println("HadithBelongsToBookPropertyUri: "+HadithBelongsToBookPropertyUri);
+		//System.out.println("HadithBelongsToBookProperty: "+HadithBelongsToBookProperty.getLocalName());
+		
+		String HadithBelongsToChapterPropertyUri =  HadithOnt + "HadithBelongsToChapter";
+		OntProperty  HadithBelongsToChapterProperty = model.getOntProperty(HadithBelongsToChapterPropertyUri);		
+		//System.out.println("HadithBelongsToChapterPropertyUri: "+HadithBelongsToChapterPropertyUri);
+		//System.out.println("HadithBelongsToChapterProperty: "+HadithBelongsToChapterProperty.getLocalName());
+		
+		/*String NarratedByPropertyUri =  HadithOnt + "NarratedBy";
+		OntProperty  NarratedByProperty = model.getOntProperty(NarratedByPropertyUri);		
+		//System.out.println("NarratedByPropertyUri: "+NarratedByPropertyUri);
+		//System.out.println("NarratedByProperty: "+NarratedByProperty.getLocalName());
+		*/
+		String HadithNumberPropertyUri =  HadithOnt + "HadithReferenceNumber";
+		OntProperty  HadithNumberProperty = model.getOntProperty(HadithNumberPropertyUri);		
+		//System.out.println("HadithNumberPropertyUri: "+HadithNumberPropertyUri);
+		//System.out.println("HadithNumberProperty: "+HadithNumberProperty.getLocalName());
+		
+		
+		
+		for (Hadith hadith: hadiths) {
+		
+			
+			String bookUri =  HadithOnt + "bukhari-"+hadith.getBookId();
+			String chapterUri = bookUri+"-"+hadith.getChapterId();
+			
+		/*	if (bookUri.equals( HadithOnt + "bukhari-1") && chapterUri.equals( bookUri+"-15")) {
+				bookUri =  HadithOnt + "bukhari-5";//+hadith.getBookId();
+				chapterUri = bookUri+"-"+hadith.getChapterId();
+			}
+			else if (bookUri.equals( HadithOnt + "bukhari-1") && chapterUri.equals( bookUri+"-27")) {
+				bookUri =  HadithOnt + "bukhari-6";//+hadith.getBookId();
+				chapterUri = bookUri+"-"+hadith.getChapterId();
+			}
+			else if (bookUri.equals( HadithOnt + "bukhari-1") && chapterUri.equals( bookUri+"-30")) {
+				bookUri =  HadithOnt + "bukhari-8";//+hadith.getBookId();
+				chapterUri = bookUri+"-"+hadith.getChapterId();
+			}
+			else if (bookUri.equals( HadithOnt + "bukhari-1") && chapterUri.equals( bookUri+"-34")) {
+				bookUri =  HadithOnt + "bukhari-8";//+hadith.getBookId();
+				chapterUri = bookUri+"-"+hadith.getChapterId();
+			}
+			else if (bookUri.equals( HadithOnt + "bukhari-1") && chapterUri.equals( bookUri+"-35")) {
+				bookUri =  HadithOnt + "bukhari-8";//+hadith.getBookId();
+				chapterUri = bookUri+"-"+hadith.getChapterId();
+			}
+			else if (bookUri.equals( HadithOnt + "bukhari-1") && chapterUri.equals( bookUri+"-55")) {
+				bookUri =  HadithOnt + "bukhari-8";//+hadith.getBookId();
+				chapterUri = bookUri+"-"+hadith.getChapterId();
+			}
+			else if (bookUri.equals( HadithOnt + "bukhari-1") ) {
+				if (chapterUri.equals( bookUri+"-69"))
+				{
+					bookUri =  HadithOnt + "bukhari-8";//+hadith.getBookId();
+					chapterUri = bookUri+"-"+hadith.getChapterId();
+					}
+				else if (chapterUri.equals( bookUri+"-88"))
+				{
+					bookUri =  HadithOnt + "bukhari-8";//+hadith.getBookId();
+					chapterUri = bookUri+"-"+hadith.getChapterId();
+				}
+				else if (chapterUri.equals( bookUri+"-9") && hadith.getHadithNumber().equals("533"))
+				{
+					bookUri =  HadithOnt + "bukhari-9";//+hadith.getBookId();
+					chapterUri = bookUri+"-"+hadith.getChapterId();
+				}
+				else if (chapterUri.equals( bookUri+"-9") && hadith.getHadithNumber().equals("536"))
+				{
+					bookUri =  HadithOnt + "bukhari-9";//+hadith.getBookId();
+					chapterUri = bookUri+"-"+hadith.getChapterId();
+				}
+				else if (chapterUri.equals( bookUri+"-24") && hadith.getHadithNumber().equals("570"))
+				{
+					bookUri =  HadithOnt + "bukhari-10";//+hadith.getBookId();
+					chapterUri = bookUri+"-"+hadith.getChapterId();
+				}
+			}
+			else if (bookUri.equals( HadithOnt + "bukhari-9") ) {
+				if (hadith.getChapterId().charAt(0)=='9')
+					chapterUri = bookUri+"-"+String.valueOf(Integer.parseInt(hadith.getChapterId().substring(1))+1);
+				else
+					chapterUri = bookUri+"-"+String.valueOf(Integer.parseInt(hadith.getChapterId().substring(0,1)+hadith.getChapterId().substring(2))+1);
+			}*/
+			
+			Individual bookIndividual = model.getIndividual(bookUri);
+			
+			Individual chapterIndividual = model.getIndividual(chapterUri);
+			
+			String hadithUri = chapterUri+"-"+hadith.getHadithNumber();
+			//System.out.println(hadithUri);
+			
+			
+			Individual individual = model.createIndividual(hadithUri, hadithClass);
+			individual.addLabel( hadith.getHadithEnglish(), "en" );
+			individual.addLabel( hadith.getHadithArabic() ,"ar" );
+			individual.addComment( hadith.getNarratorChain() ,"ar" );
+			individual.addProperty(HadithBelongsToCollectionProperty, bukhari);
+			individual.addProperty(HadithBelongsToBookProperty, bookIndividual);
+			individual.addProperty(HadithBelongsToChapterProperty, chapterIndividual);
+			bukhari.addProperty(CollectionHasHadithProperty, individual);
+			bookIndividual.addProperty(BookHasHadithProperty, individual);
+			chapterIndividual.addProperty(ChapterHasHadithProperty, individual);
+			individual.addProperty(HadithNumberProperty,hadith.getHadithNumber());
+					
+			
+			/*if (hadith.getNarratorEnglish()!=null)
+			{
+				String narratorUri =  HadithOnt + hadith.getNarratorEnglish().replaceAll(" ", "_").replaceAll("'", "").replaceAll(".", "_");
+				Individual narratorIndividual = model.getIndividual(narratorUri);
+				if (narratorIndividual == null) {
+					narratorIndividual = model.createIndividual(narratorUri, hadithNarratorClass);
+					narratorIndividual.addLabel( hadith.getNarratorEnglish(), "en" );
+				
+				}
+				individual.addProperty(NarratedByProperty,narratorIndividual);
+				narratorIndividual.addProperty(NarratedProperty, individual);
+			}*/
+		}
+		
+		/*================================================================================
+		 * 
+		 * Automated Hadith Indviduals Population end
+		 * 
+		 *=================================================================================*/
+		
+		//System.out.println("Here");
+		FileWriter out = null;
+		try {
+			  // XML format - long and verbose
+			  out = new FileWriter( "mymodel.owl" );
+		
+			  model.write( out,"RDF/XML-ABBREV"  );
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			finally {
+			  if (out != null) {
+			   try {
+				out.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			  }
+			}
+		
+
+		//System.out.println("Here_____2");
+		//======================================================
+	/*	
+		String queryString= prefix +
+			       "SELECT ?x \r\n" + 
+			       "	WHERE { ?x a qur:Campaign }";
+		
+		
+			Query query= QueryFactory.create(queryString);
+			QueryExecution qexec=QueryExecutionFactory.create(query, model);
+			try {
+			    ResultSet results =  qexec.execSelect();
+			    while ( results.hasNext()){
+			        QuerySolution soln = results.nextSolution();
+			        Resource name = soln.getResource("x");
+			        //Resource y = soln.getResource("y");
+			        System.out.println(name.getLocalName()+"\t\t"+y.getLocalName());
+			    }
+			} finally {
+			qexec.close();
+			    }
+			
+			
+		*/
+			//conn.close();
+			//Writing model to a file
+			
+	
